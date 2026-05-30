@@ -1,0 +1,91 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      String   @default("referee") // admin | referee | viewer
+  createdAt DateTime @default(now())
+}
+
+model Tournament {
+  id        String   @id @default(uuid())
+  name      String
+  location  String
+  startDate DateTime
+  endDate   DateTime
+  status    String   @default("upcoming")
+  teams     Team[]
+  matches   Match[]
+  courses   Course[]
+  createdAt DateTime @default(now())
+}
+
+model Team {
+  id           String     @id @default(uuid())
+  name         String
+  province     String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id])
+  tournamentId String
+  players      Player[]
+  matchTeams   MatchTeam[]
+}
+
+model Player {
+  id        String  @id @default(uuid())
+  firstName String
+  lastName  String
+  team      Team    @relation(fields: [teamId], references: [id])
+  teamId    String
+  scores    Score[]
+}
+
+model Course {
+  id           String     @id @default(uuid())
+  name         String
+  gateCount    Int        @default(12)
+  tournament   Tournament @relation(fields: [tournamentId], references: [id])
+  tournamentId String
+  matches      Match[]
+}
+
+model Match {
+  id           String     @id @default(uuid())
+  round        Int
+  scheduledAt  DateTime
+  status       String     @default("upcoming")
+  tournament   Tournament @relation(fields: [tournamentId], references: [id])
+  tournamentId String
+  course       Course     @relation(fields: [courseId], references: [id])
+  courseId     String
+  matchTeams   MatchTeam[]
+}
+
+model MatchTeam {
+  id           String  @id @default(uuid())
+  match        Match   @relation(fields: [matchId], references: [id])
+  matchId      String
+  team         Team    @relation(fields: [teamId], references: [id])
+  teamId       String
+  totalStrokes Int     @default(0)
+  rank         Int?
+  scores       Score[]
+}
+
+model Score {
+  id          String    @id @default(uuid())
+  matchTeam   MatchTeam @relation(fields: [matchTeamId], references: [id])
+  matchTeamId String
+  player      Player    @relation(fields: [playerId], references: [id])
+  playerId    String
+  gateNumber  Int
+  strokes     Int
+  recordedAt  DateTime  @default(now())
+}
